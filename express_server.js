@@ -52,10 +52,12 @@ app.get("/urls/:shortURL", (req, res) => {
   };
   res.render("urls_show", templateVars);
 });
-
+//for redirect links from short urls pages
 app.get("/u/:shortURL", (req, res) => {
-  // const longURL = ...
-  res.redirect(longURL);
+  console.log(req.params);
+   const longURL = urlDatabase[req.params.shortURL]
+   console.log("longURL",longURL);
+   res.redirect(longURL);
 });
 
 app.get("/hello", (req, res) => {
@@ -67,7 +69,6 @@ app.post("/urls", (req, res) => {
   const newLongUrl = req.body.longURL;
   urlDatabase[smallUrl] = newLongUrl;
   res.redirect("/urls/"+ smallUrl);
-  // res.send(urlDatabase.tinyUrl = "longURL")
 });
 
 app.listen(PORT, () => {
