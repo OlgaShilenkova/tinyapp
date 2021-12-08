@@ -1,17 +1,18 @@
 {
   "name": "tinyapp",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "express_server.js",
   "scripts": {
-    "start": "./node_modules/.bin/nodemon -L express_server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node express_server.js",
+    "dev": "nodemon express_server.js",
+    "olga": "echo 'Hello, Olga!'"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/OlgaShilenkova/tinyapp.git"
+    "url": "https://github.com/OlgaShilenkova/tinyapp.git"
   },
   "keywords": [],
-  "author": "",
+  "author": "Olga Shilenkova",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/OlgaShilenkova/tinyapp/issues"
