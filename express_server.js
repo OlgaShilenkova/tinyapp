@@ -45,16 +45,21 @@ app.get("/urls/new", (req, res) => {
   res.render("urls_new");
 });
 
-
 app.post("/urls/:shortURL", (req, res) => {
-  // const newLongUrl = req.body.longURL;
-  const templateVars = {
-    shortURL: req.params.shortURL,
-    longURL: urlDatabase[req.params.shortURL]
-  };
-  console.log("req.body", req.body)
-  console.log("req.params", req.params)
-  console.log("templateVars",templateVars )
+
+  const { newLongURL } = req.body;// extract newLongUrl from req.body object
+  if (!newLongURL) {
+    return res.status(400).send(" You need to pass a newLongURL to update ");
+  }
+
+  const { shortURL } = req.params;
+
+  const urlObject = urlDatabase[shortURL];
+  if (!urlObject) {
+    return res.status(400).send(" This shortURL is not exist in data base ");
+  }
+
+  urlDatabase[shortURL] = newLongURL;
   res.redirect("/urls");
 });
 
