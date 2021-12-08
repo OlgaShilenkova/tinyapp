@@ -2,6 +2,7 @@ const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
 const bodyParser = require("body-parser");
+const morgan = require("morgan");
 
 app.set("view engine", "ejs");
 
@@ -9,6 +10,7 @@ app.set("view engine", "ejs");
 // MIDDLEWARE
 //
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(morgan("dev"));
 
 // Function to generate short Url
 function generateRandomString() {
@@ -37,6 +39,26 @@ const urlDatabase = {
 //
 
 //
+// CREATE new
+//
+app.get("/urls/new", (req, res) => {
+  res.render("urls_new");
+});
+
+
+app.post("/urls/:shortURL", (req, res) => {
+  // const newLongUrl = req.body.longURL;
+  const templateVars = {
+    shortURL: req.params.shortURL,
+    longURL: urlDatabase[req.params.shortURL]
+  };
+  console.log("req.body", req.body)
+  console.log("req.params", req.params)
+  console.log("templateVars",templateVars )
+  res.redirect("/urls");
+});
+
+//
 //READ
 //
 app.get("/", (req, res) => {
@@ -63,18 +85,21 @@ app.post("/urls", (req, res) => {
   let smallUrl = generateRandomString();
   const newLongUrl = req.body.longURL;
   urlDatabase[smallUrl] = newLongUrl;
-  res.redirect("/urls/"+ smallUrl);
+  res.redirect("/urls/" + smallUrl);
 });
 
-//
-// ? CREATE new
-//
-app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
-});
+// app.post("/urls", (req, res) => {
+//   let smallUrl = generateRandomString();
+//   const newLongUrl = req.body.longURL;
+//   urlDatabase[smallUrl] = newLongUrl;
+//   res.redirect("/urls/" + smallUrl);
+// });
+
+
+
 
 //
-// ? UPDATE
+// UPDATE
 //
 
 app.get("/urls/:shortURL", (req, res) => {
@@ -84,27 +109,35 @@ app.get("/urls/:shortURL", (req, res) => {
   res.render("urls_show", templateVars);
 });
 
+
+
 //
 //for redirect links from short urls pages
 //
 app.get("/u/:shortURL", (req, res) => {
   console.log(req.params);
-   const longURL = urlDatabase[req.params.shortURL]
-   console.log("longURL",longURL);
-   res.redirect(longURL);
+  const longURL = urlDatabase[req.params.shortURL]
+  res.redirect(longURL);
 });
 
 //
 // DELETE
 //
 
-app.post( "/urls/:shortURL/delete", (req,res)=>{
+app.post("/urls/:shortURL/delete", (req, res) => {
   const idToDelete = req.params.shortURL;
   delete urlDatabase[idToDelete];
   res.redirect("/urls")
 
 });
 
+app.post("/urls/:id", (req, res) => {
+  const id = req.params.id;
+  const newLongURL = req.body.longURL;
+  urlDatabase[id] = newLongURL;
+
+  res.redirect("/urls");
+})
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
