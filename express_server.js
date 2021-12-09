@@ -29,6 +29,30 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
+const users = {
+  "userRandomID": {
+    id: "userRandomID",
+    email: "user@example.com",
+    password: "purple-monkey-dinosaur"
+  },
+  "user2RandomID": {
+    id: "user2RandomID",
+    email: "user2@example.com",
+    password: "dishwasher-funk"
+  }
+}
+
+const findUserByEmail = (email) => {
+  for (const userId in users) {
+    const user = users[userId];
+    if (user.email === email) {
+      return user;
+    }
+  }
+  return null;
+}
+
+
 //
 // MIDDLEWARE SETTINGS FOR SERVER
 //
@@ -70,7 +94,7 @@ app.get("/urls/new", (req, res) => {
   const templateVars = {
     username: req.cookies["username"]
   }
-  res.render("urls_new",templateVars );
+  res.render("urls_new", templateVars);
 });
 
 // UPDATE
@@ -131,16 +155,50 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 });
 
 //SECURITY ROUTES
+
+//REGISTER
+app.get("/register", (req, res) => {
+  res.render("register");
+})
+app.post("/register", (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).send("email and password cannot be blank")
+  }
+
+  const user = findUserByEmail(email);
+
+  if (user) {
+    return res.status(400).send('a user with that email already exists');
+  }
+
+  const id = generateRandomString();
+
+  users[id] = {
+    id: id,
+    email: email,
+    password: password
+  };
+
+  res.cookie("users[id].id", users[id].id);
+  res.send("Writed in")
+  // res.redirect("/urls");
+})
+
+
+
+//LOGIN
 // app.get ("/login", (req,res)=>{
 //   res.render("login")
 // })
-
 app.post("/login", (req, res) => {
   const { username } = req.body;
   res.cookie("username", username);
   console.log("req.cookies", req.cookies["username"]);
   redirect("/urls")
 });
+
 
 //LOGOUT
 app.post("/logout", (req, res) => {
