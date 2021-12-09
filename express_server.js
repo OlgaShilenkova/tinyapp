@@ -76,53 +76,89 @@ app.get("/hello", (req, res) => {
 });
 
 app.get("/urls.json", (req, res) => {
-  res.json(urlDatabase); ``
+  res.json(urlDatabase);
 });
 
 //VIEWS ROUTES
-//(show all the url links) --> url_index
+//(show all the url links) --> urls_index.ejs
 app.get("/urls", (req, res) => {
   const { user_id } = req.cookies;
-  const userObject = users[user_id];
-  //  console.log( "user_id", user_id);
-  console.log("userObject from /urls", userObject);
+  if (!user_id) {
+    return res.redirect("/login");
+  }
+
+  const user = users[user_id];
+  if (!user) {
+    return res.redirect("/login");
+  }
 
   const templateVars = {
-    email: users[user_id].email,
+    user: user,
     urls: urlDatabase
   };
-  console.log("templateVars", templateVars);
   res.render("urls_index", templateVars);
 });
 
 // CREATE new
 app.get("/urls/new", (req, res) => {
-  const templateVars = {
-    userObject: users,
-    urls: urlDatabase
+  const { user_id } = req.cookies;
+  if (!user_id) {
+    return res.redirect("/login");
   }
+
+  const user = users[user_id];
+  if (!user) {
+    return res.redirect("/login");
+  }
+
+  const templateVars = { user };
   res.render("urls_new", templateVars);
 });
 
-// UPDATE
+// UPDATE --> urls.show.ejs
 app.get("/urls/:shortURL", (req, res) => {
+
+  const { user_id } = req.cookies;
+  if (!user_id) {
+    return res.redirect("/login");
+  }
+
+  const user = users[user_id];
+  if (!user) {
+    return res.redirect("/login");
+  }
+
+  const { shortURL} = req.params;
+  const longURL = urlDatabase[shortURL];
+
   const templateVars = {
-    userObject: users,
-    urls: urlDatabase,
-    shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL]
+    user,
+    shortURL, 
+    longURL
   };
   res.render("urls_show", templateVars);
 });
 
 //for redirect links from short urls pages
 app.get("/u/:shortURL", (req, res) => {
-  const longURL = urlDatabase[req.params.shortURL]
+  const {shortURL} = req.params;
+  const longURL = urlDatabase[shortURL];
   res.redirect(longURL);
 });
 
 //CRUD URLS (creat, read, update, delete urls)
-//CREATE 
+//CREATE   --> urls_index
 app.post("/urls", (req, res) => {
+  const { user_id } = req.cookies;
+  if (!user_id) {
+    return res.redirect("/login");
+  }
+
+  const user = users[user_id];
+  if (!user) {
+    return res.redirect("/login");
+  }
+
   const { longURL } = req.body;
   if (!longURL) {
     return res.status(400).send(" You need to pass a longURL to create. ");
@@ -136,6 +172,15 @@ app.post("/urls", (req, res) => {
 
 //UPDATE
 app.post("/urls/:shortURL", (req, res) => {
+  const { user_id } = req.cookies;
+  if (!user_id) {
+    return res.redirect("/login");
+  }
+
+  const user = users[user_id];
+  if (!user) {
+    return res.redirect("/login");
+  }
 
   const { newLongURL } = req.body;// extract newLongUrl from req.body object
   if (!newLongURL) {
@@ -148,35 +193,71 @@ app.post("/urls/:shortURL", (req, res) => {
   if (!urlObject) {
     return res.status(400).send(" This shortURL is not exist in data base ");
   }
-
+ //check if URL belongs to user
+ // const urlBelongsToUser = urlObject.userID === user.id; // true of false
+ //if (!urlBelongsToUser){
+ // return res.status(400).send(" You do not own this url. ")
+ //  }
   urlDatabase[shortURL] = newLongURL;
   res.redirect("/urls");
 });
 
 // DELETE
 app.post("/urls/:shortURL/delete", (req, res) => {
-  const idToDelete = req.params.shortURL;
-  delete urlDatabase[idToDelete];
+  const { user_id } = req.cookies;
+  if (!user_id) {
+    return res.redirect("/login");
+  }
+
+  const user = users[user_id];
+  if (!user) {
+    return res.redirect("/login");
+  }
+
+  const {shortURL} = req.params;
+
+  const urlObject = urlDatabase[shortURL];
+  if (!urlObject) {
+    return res.status(400).send(" This shortURL is not exist in data base.");
+  }
+
+ // const urlBelongsToUser = urlObject.userID === user.id; // true of false
+ //if (!urlBelongsToUser){
+ // return res.status(400).send(" You do not own this url. ")
+ //  }
+  delete urlDatabase[shortURL];
   res.redirect("/urls")
 
 });
 
-//SECURITY ROUTES
+//AUTH ROUTES
 
 //REGISTER
 app.get("/register", (req, res) => {
-  res.render("register");
-})
+  const { user_id } = req.cookies;
+  if (user_id) {
+    return res.redirect("/urls");
+  }
+
+  const templateVars = {
+    user: null
+  };
+  res.render("register", templateVars);
+});
 
 app.post("/register", (req, res) => {
+  const { user_id } = req.cookies;
+  if (user_id) {
+    return res.redirect("/urls");
+  }
+
   const { email, password } = req.body;
   if (!email || !password) {
     return res.status(400).send("email and password cannot be blank")
   }
 
-  const user = findUserByEmail(email);
-
-  if (user) {
+  const emailExist = findUserByEmail(email);
+  if (emailExist) {
     return res.status(400).send('a user with that email already exists');
   }
 
@@ -187,33 +268,46 @@ app.post("/register", (req, res) => {
     email: email,
     password: password
   };
-  res.cookie('user_id', users[id].id);
+  res.cookie('user_id', users[id].id); 
   res.redirect("/urls");
-})
+});
 
 
 
 //LOGIN
 app.get("/login", (req, res) => {
-  res.render("login")
-})
+  const { user_id } = req.cookies;
+  if (user_id) {
+    return res.redirect("/urls");
+  }
+
+  const templateVars = {
+    user: null
+  };
+  res.render("login", templateVars);
+});
 
 app.post("/login", (req, res) => {
-  const { email, password } = req.body;
+  const { user_id } = req.cookies;
+  if (user_id) {
+    return res.redirect("/urls");
+  }
 
+  const { email, password } = req.body;
   if (!email || !password) {
     return res.status(400).send("Email and password cannot be blank")
   }
 
   const user = findUserByEmail(email);
-  console.log('user', user);
-
+ 
   // check to see if that user exists in our database
   if (!user) {
     return res.status(400).send("A user with that email doesn't exist")
   }
+
+  const passwordMatch = user.password === password;//change this when hashing passwords
   //check if password match
-  if (user.password !== password) {
+  if (!passwordMatch) {
     return res.status(400).send('Your password doesnt match');
   }
 
@@ -226,7 +320,7 @@ app.post("/login", (req, res) => {
 //LOGOUT
 app.post("/logout", (req, res) => {
   res.clearCookie("user_id");
-  res.redirect("/urls");
+  res.redirect("/login");
 });
 
 //
