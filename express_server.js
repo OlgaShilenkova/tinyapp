@@ -139,7 +139,6 @@ app.post("/login", (req, res) => {
   const { username } = req.body;
   res.cookie("username", username);
   console.log("req.cookies", req.cookies["username"]);
-  // res.send("You posted to login");
   redirect("/urls")
 });
 
