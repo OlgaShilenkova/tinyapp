@@ -53,6 +53,7 @@ const findUserByEmail = (email) => {
 }
 
 
+
 //
 // MIDDLEWARE SETTINGS FOR SERVER
 //
@@ -81,18 +82,24 @@ app.get("/urls.json", (req, res) => {
 //VIEWS ROUTES
 //(show all the url links) --> url_index
 app.get("/urls", (req, res) => {
+  const { user_id } = req.cookies;
+  const userObject = users[user_id];
+  //  console.log( "user_id", user_id);
+  console.log("userObject", userObject);
 
   const templateVars = {
-    username: req.cookies["username"],
+    email: users[user_id].email,
     urls: urlDatabase
   };
+  console.log("templateVars", templateVars);
   res.render("urls_index", templateVars);
 });
 
 // CREATE new
 app.get("/urls/new", (req, res) => {
   const templateVars = {
-    username: req.cookies["username"]
+    userObject: users,
+    urls: urlDatabase
   }
   res.render("urls_new", templateVars);
 });
@@ -100,7 +107,8 @@ app.get("/urls/new", (req, res) => {
 // UPDATE
 app.get("/urls/:shortURL", (req, res) => {
   const templateVars = {
-    username: req.cookies["username"],
+    userObject: users,
+    urls: urlDatabase,
     shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL]
   };
   res.render("urls_show", templateVars);
@@ -108,7 +116,6 @@ app.get("/urls/:shortURL", (req, res) => {
 
 //for redirect links from short urls pages
 app.get("/u/:shortURL", (req, res) => {
-  console.log(req.params);
   const longURL = urlDatabase[req.params.shortURL]
   res.redirect(longURL);
 });
@@ -161,6 +168,7 @@ app.get("/register", (req, res) => {
   res.render("register");
 })
 app.post("/register", (req, res) => {
+  console.log("req.body", req.body);
   const { email, password } = req.body;
 
   if (!email || !password) {
@@ -180,8 +188,7 @@ app.post("/register", (req, res) => {
     email: email,
     password: password
   };
-
-  res.cookie("users[id].id", users[id].id);
+  res.cookie('user_id', users[id].id)
   res.send("Writed in")
   // res.redirect("/urls");
 })
@@ -193,16 +200,16 @@ app.post("/register", (req, res) => {
 //   res.render("login")
 // })
 app.post("/login", (req, res) => {
-  const { username } = req.body;
-  res.cookie("username", username);
-  console.log("req.cookies", req.cookies["username"]);
+  // const { username } = req.body;
+  // res.cookie("username", username);
+  // console.log("req.cookies", req.cookies["username"]);
   redirect("/urls")
 });
 
 
 //LOGOUT
 app.post("/logout", (req, res) => {
-  res.clearCookie("username");
+  res.clearCookie("user_id");
   res.redirect("/urls");
 });
 
