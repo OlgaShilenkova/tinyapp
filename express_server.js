@@ -24,9 +24,20 @@ function generateRandomString() {
   return nums.join("");
 }
 
+// const urlDatabase = {
+//   "b2xVn2": "http://www.lighthouselabs.ca",
+//   "9sm5xK": "http://www.google.com"
+// };
+
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  b6UTxQ: {
+      longURL: "https://www.tsn.ca",
+      userID: "aJ48lW"
+  },
+  i3BoGr: {
+      longURL: "https://www.google.ca",
+      userID: "aJ48lW"
+  }
 };
 
 const users = {
@@ -96,6 +107,7 @@ app.get("/urls", (req, res) => {
     user: user,
     urls: urlDatabase
   };
+ 
   res.render("urls_index", templateVars);
 });
 
@@ -194,10 +206,10 @@ app.post("/urls/:shortURL", (req, res) => {
     return res.status(400).send(" This shortURL is not exist in data base ");
   }
  //check if URL belongs to user
- // const urlBelongsToUser = urlObject.userID === user.id; // true of false
- //if (!urlBelongsToUser){
- // return res.status(400).send(" You do not own this url. ")
- //  }
+ const urlBelongsToUser = urlObject.userID === user.id; // true of false
+ if (!urlBelongsToUser){
+ return res.status(400).send(" You do not own this url. ")
+  }
   urlDatabase[shortURL] = newLongURL;
   res.redirect("/urls");
 });
@@ -221,10 +233,10 @@ app.post("/urls/:shortURL/delete", (req, res) => {
     return res.status(400).send(" This shortURL is not exist in data base.");
   }
 
- // const urlBelongsToUser = urlObject.userID === user.id; // true of false
- //if (!urlBelongsToUser){
- // return res.status(400).send(" You do not own this url. ")
- //  }
+ const urlBelongsToUser = urlObject.userID === user.id; // true of false
+ if (!urlBelongsToUser){
+ return res.status(400).send(" You do not own this url. ")
+  }
   delete urlDatabase[shortURL];
   res.redirect("/urls")
 
