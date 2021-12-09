@@ -85,7 +85,7 @@ app.get("/urls", (req, res) => {
   const { user_id } = req.cookies;
   const userObject = users[user_id];
   //  console.log( "user_id", user_id);
-  console.log("userObject", userObject);
+  console.log("userObject from /urls", userObject);
 
   const templateVars = {
     email: users[user_id].email,
@@ -167,10 +167,9 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 app.get("/register", (req, res) => {
   res.render("register");
 })
-app.post("/register", (req, res) => {
-  console.log("req.body", req.body);
-  const { email, password } = req.body;
 
+app.post("/register", (req, res) => {
+  const { email, password } = req.body;
   if (!email || !password) {
     return res.status(400).send("email and password cannot be blank")
   }
@@ -188,22 +187,39 @@ app.post("/register", (req, res) => {
     email: email,
     password: password
   };
-  res.cookie('user_id', users[id].id)
-  res.send("Writed in")
-  // res.redirect("/urls");
+  res.cookie('user_id', users[id].id);
+  res.redirect("/urls");
 })
 
 
 
 //LOGIN
-// app.get ("/login", (req,res)=>{
-//   res.render("login")
-// })
+app.get("/login", (req, res) => {
+  res.render("login")
+})
+
 app.post("/login", (req, res) => {
-  // const { username } = req.body;
-  // res.cookie("username", username);
-  // console.log("req.cookies", req.cookies["username"]);
-  redirect("/urls")
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).send("Email and password cannot be blank")
+  }
+
+  const user = findUserByEmail(email);
+  console.log('user', user);
+
+  // check to see if that user exists in our database
+  if (!user) {
+    return res.status(400).send("A user with that email doesn't exist")
+  }
+  //check if password match
+  if (user.password !== password) {
+    return res.status(400).send('Your password doesnt match');
+  }
+
+  // happy path
+  res.cookie('user_id', user.id);
+  res.redirect("/urls");
 });
 
 
