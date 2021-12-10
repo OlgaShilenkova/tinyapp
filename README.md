@@ -4,9 +4,10 @@ This is my first TinyApp is a full stack web application built with Node and Exp
 
 ## Final Product
 
-!["screenshot description"](#)
+!["Main page look for user"](https://github.com/OlgaShilenkova/tinyapp/blob/main/docs/urls-page.png?raw=true)
 
-!["screenshot description"](#)
+!["Page for creating short url"](https://github.com/OlgaShilenkova/tinyapp/blob/main/docs/new-url-page.png?raw=true)
+
 
 ## Dependencies
 
