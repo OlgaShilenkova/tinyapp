@@ -8,6 +8,7 @@ const bodyParser = require("body-parser");
 const morgan = require("morgan");
 const cookieParser = require('cookie-parser');
 const bcrypt = require('bcryptjs');
+const cookieSession = require('cookie-session')
 
 // Function to generate short Url
 function generateRandomString() {
@@ -73,7 +74,10 @@ app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(morgan("dev"));
 app.use(cookieParser()); // bring in cookie-parser
-// const salt = bcrypt.genSaltSync(10);
+app.use(cookieSession({
+  name: 'session',
+  keys: ["like houmus", "miss shuarma"]
+}))
 //
 //ROUTES
 //
@@ -94,7 +98,7 @@ app.get("/urls.json", (req, res) => {
 //VIEWS ROUTES
 //(show all the url links) --> urls_index.ejs
 app.get("/urls", (req, res) => {
-  const { user_id } = req.cookies;
+  const { user_id } = req.session;
   if (!user_id) {
     res.redirect("login");
     // return res.status(400).send(" You need to register first. ");
@@ -116,7 +120,7 @@ app.get("/urls", (req, res) => {
 
 // CREATE new
 app.get("/urls/new", (req, res) => {
-  const { user_id } = req.cookies;
+  const { user_id } = req.session;
   if (!user_id) {
     return res.redirect("/login");
   }
@@ -133,7 +137,7 @@ app.get("/urls/new", (req, res) => {
 // UPDATE --> urls.show.ejs
 app.get("/urls/:shortURL", (req, res) => {
 
-  const { user_id } = req.cookies;
+  const { user_id } = req.session;
   if (!user_id) {
     return res.redirect("/login");
   }
@@ -164,7 +168,7 @@ app.get("/u/:shortURL", (req, res) => {
 //CRUD URLS (creat, read, update, delete urls)
 //CREATE   --> urls_index
 app.post("/urls", (req, res) => {
-  const { user_id } = req.cookies;
+  const { user_id } = req.session;
   if (!user_id) {
     return res.redirect("/login");
   }
@@ -187,7 +191,7 @@ app.post("/urls", (req, res) => {
 
 //UPDATE
 app.post("/urls/:shortURL", (req, res) => {
-  const { user_id } = req.cookies;
+  const { user_id } = req.session;
   if (!user_id) {
     return res.redirect("/login");
   }
@@ -219,7 +223,7 @@ app.post("/urls/:shortURL", (req, res) => {
 
 // DELETE
 app.post("/urls/:shortURL/delete", (req, res) => {
-  const { user_id } = req.cookies;
+  const { user_id } = req.session;
   if (!user_id) {
     return res.redirect("/login");
   }
@@ -249,7 +253,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 
 //REGISTER
 app.get("/register", (req, res) => {
-  const { user_id } = req.cookies;
+  const { user_id } = req.session;
   if (user_id) {
     return res.redirect("/urls");
   }
@@ -261,7 +265,7 @@ app.get("/register", (req, res) => {
 });
 
 app.post("/register", (req, res) => {
-  const { user_id } = req.cookies;
+  const { user_id } = req.session;
   if (user_id) {
     return res.redirect("/urls");
   }
@@ -285,7 +289,8 @@ app.post("/register", (req, res) => {
     email: email,
     password: hashedPassword
   };
-  res.cookie('user_id', users[id].id);
+  // res.cookie('user_id', users[id].id); don't need because have cookie-session instead
+  req.session.user_id = users[id].id;
   res.redirect("/urls");
 });
 
@@ -293,7 +298,7 @@ app.post("/register", (req, res) => {
 
 //LOGIN
 app.get("/login", (req, res) => {
-  const { user_id } = req.cookies;
+  const { user_id } = req.session;
   if (user_id) {
     return res.redirect("/urls");
   }
@@ -305,7 +310,7 @@ app.get("/login", (req, res) => {
 });
 
 app.post("/login", (req, res) => {
-  const { user_id } = req.cookies;
+  const { user_id } = req.session;
   if (user_id) {
     return res.redirect("/urls");
   }
@@ -329,14 +334,16 @@ app.post("/login", (req, res) => {
   }
 
   // happy path
-  res.cookie('user_id', user.id);
+  // res.cookie('user_id', user.id); don't need because have cookie-session instead
+  req.session.user_id = user.id;
   res.redirect("/urls");
 });
 
 
 //LOGOUT
 app.post("/logout", (req, res) => {
-  res.clearCookie("user_id");
+  // res.clearCookie("user_id");
+  delete req.session.user_id;
   res.redirect("/login");
 });
 
