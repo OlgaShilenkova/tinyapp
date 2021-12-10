@@ -7,7 +7,7 @@ const PORT = 8080; // default port 8080
 const morgan = require("morgan");
 const bcrypt = require('bcryptjs');
 const cookieSession = require('cookie-session')
-const { generateRandomString, findUserByEmail } = require("./helpers.js");
+const { generateRandomString, findUserByEmail, getUrlsForUser } = require("./helpers.js");
 
 const urlDatabase = {
   b6UTxQ: {
@@ -41,8 +41,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use(morgan("dev"));
 app.use(cookieSession({
   name: 'session',
-  keys: ["like houmus", "miss shuarma"], 
-  maxAge: 10*60*1000 // for 10 min
+  keys: ["like houmus", "miss shuarma"],
+  maxAge: 10 * 60 * 1000 // for 10 min
 }))
 
 //
@@ -105,9 +105,10 @@ app.get("/urls", (req, res) => {
     return res.redirect("login");
   };
 
+  const urlsForUser = getUrlsForUser(user.id, urlDatabase);
   const templateVars = {
     user: user,
-    urls: urlDatabase
+    urls: urlsForUser
   };
 
   res.render("urls_index", templateVars);
@@ -158,7 +159,7 @@ app.get("/urls/:shortURL", (req, res) => {
 //for redirect links from short urls pages
 app.get("/u/:shortURL", (req, res) => {
   const { shortURL } = req.params;
-  const {longURL} = urlDatabase[shortURL];
+  const { longURL } = urlDatabase[shortURL];
   res.redirect(longURL);
 });
 
@@ -183,9 +184,10 @@ app.post("/urls", (req, res) => {
   const shortURL = generateRandomString();
 
   urlDatabase[shortURL] = {
-    id:shortURL,
+    id: shortURL,
     longURL: longURL,
-    userID: user.id
+    userID: user.id,
+    createdAt: new Date(Date.now()).toDateString()
   };
 
   res.redirect("/urls/" + shortURL);
@@ -222,9 +224,10 @@ app.post("/urls/:shortURL", (req, res) => {
     return res.status(400).send(" You do not own this url. ")
   }
   urlDatabase[shortURL] = {
-    id:shortURL,
+    id: shortURL,
     longURL: newLongURL,
-    userID: user.id
+    userID: user.id,
+    createdAt: new Date(Date.now()).toDateString()
   };
 
   res.redirect("/urls");
