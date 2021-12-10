@@ -4,32 +4,10 @@
 const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
-const bodyParser = require("body-parser");
 const morgan = require("morgan");
-const cookieParser = require('cookie-parser');
 const bcrypt = require('bcryptjs');
 const cookieSession = require('cookie-session')
-
-// Function to generate short Url
-function generateRandomString() {
-  let nums = [];
-  for (let i = 0; i < 3; i++) {
-    let num = Math.floor(Math.random() * 9);
-    nums.push(num);
-  }
-  const alphabet = "abcdefghijklmnopqrstuvwxyz"
-  for (let i = 0; i < 3; i++) {
-    let randomNum = Math.floor(Math.random() * alphabet.length);
-    let character = alphabet[randomNum];
-    nums.push(character);
-  }
-  return nums.join("");
-}
-
-// const urlDatabase = {
-//   "b2xVn2": "http://www.lighthouselabs.ca",
-//   "9sm5xK": "http://www.google.com"
-// };
+const { generateRandomString, findUserByEmail } = require("./helpers.js");
 
 const urlDatabase = {
   b6UTxQ: {
@@ -55,43 +33,62 @@ const users = {
   }
 }
 
-const findUserByEmail = (email) => {
-  for (const userId in users) {
-    const user = users[userId];
-    if (user.email === email) {
-      return user;
-    }
-  }
-  return null;
-}
-
-
-
 //
 // MIDDLEWARE SETTINGS FOR SERVER
 //
 app.set("view engine", "ejs");
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true }));
 app.use(morgan("dev"));
-app.use(cookieParser()); // bring in cookie-parser
 app.use(cookieSession({
   name: 'session',
-  keys: ["like houmus", "miss shuarma"]
+  keys: ["like houmus", "miss shuarma"], 
+  maxAge: 10*60*1000 // for 10 min
 }))
+
 //
 //ROUTES
 //
 
 //EXAMPLE ROUTES
 app.get("/", (req, res) => {
-  res.send("Hello!");
+  // validating cookie
+  const { user_id } = req.session;
+  if (!user_id) {
+    return res.redirect("login");
+  };
+  //validating existing user
+  const user = users[user_id];
+  if (!user) {
+    return res.redirect("login");
+  };
+  res.redirect("/urls");
 });
 
 app.get("/users.json", (req, res) => {
+  // validating cookie
+  const { user_id } = req.session;
+  if (!user_id) {
+    return res.redirect("login");
+  };
+  //validating existing user
+  const user = users[user_id];
+  if (!user) {
+    return res.redirect("login");
+  };
   res.json(users);
 });
 
 app.get("/urls.json", (req, res) => {
+  // validating cookie
+  const { user_id } = req.session;
+  if (!user_id) {
+    return res.redirect("login");
+  };
+  //validating existing user
+  const user = users[user_id];
+  if (!user) {
+    return res.redirect("login");
+  };
   res.json(urlDatabase);
 });
 
@@ -100,14 +97,12 @@ app.get("/urls.json", (req, res) => {
 app.get("/urls", (req, res) => {
   const { user_id } = req.session;
   if (!user_id) {
-    res.redirect("login");
-    // return res.status(400).send(" You need to register first. ");
+    return res.redirect("login");
   };
-  
+
   const user = users[user_id];
   if (!user) {
-    res.redirect("login");
-    // return res.status(400).send(" You need to logg in first. ");
+    return res.redirect("login");
   };
 
   const templateVars = {
@@ -148,12 +143,14 @@ app.get("/urls/:shortURL", (req, res) => {
   }
 
   const { shortURL } = req.params;
-  const longURL = urlDatabase[shortURL];
+  const urlObject = urlDatabase[shortURL];
+  if (!urlObject) {
+    return res.status(400).send(" This shortURL is not exist in data base ");
+  }
 
   const templateVars = {
     user,
-    shortURL,
-    longURL
+    urlObject
   };
   res.render("urls_show", templateVars);
 });
@@ -161,7 +158,7 @@ app.get("/urls/:shortURL", (req, res) => {
 //for redirect links from short urls pages
 app.get("/u/:shortURL", (req, res) => {
   const { shortURL } = req.params;
-  const longURL = urlDatabase[shortURL];
+  const {longURL} = urlDatabase[shortURL];
   res.redirect(longURL);
 });
 
@@ -183,10 +180,15 @@ app.post("/urls", (req, res) => {
     return res.status(400).send(" You need to pass a longURL to create. ");
   }
 
-  const shortUrl = generateRandomString();
+  const shortURL = generateRandomString();
 
-  urlDatabase[shortUrl] = longURL;
-  res.redirect("/urls/" + shortUrl);
+  urlDatabase[shortURL] = {
+    id:shortURL,
+    longURL: longURL,
+    userID: user.id
+  };
+
+  res.redirect("/urls/" + shortURL);
 });
 
 //UPDATE
@@ -212,12 +214,19 @@ app.post("/urls/:shortURL", (req, res) => {
   if (!urlObject) {
     return res.status(400).send(" This shortURL is not exist in data base ");
   }
+
   //check if URL belongs to user
+
   const urlBelongsToUser = urlObject.userID === user.id; // true of false
   if (!urlBelongsToUser) {
     return res.status(400).send(" You do not own this url. ")
   }
-  urlDatabase[shortURL] = newLongURL;
+  urlDatabase[shortURL] = {
+    id:shortURL,
+    longURL: newLongURL,
+    userID: user.id
+  };
+
   res.redirect("/urls");
 });
 
@@ -275,7 +284,7 @@ app.post("/register", (req, res) => {
     return res.status(400).send("email and password cannot be blank")
   }
 
-  const emailExist = findUserByEmail(email);
+  const emailExist = findUserByEmail(email, users);
   if (emailExist) {
     return res.status(400).send('a user with that email already exists');
   }
@@ -283,7 +292,7 @@ app.post("/register", (req, res) => {
   const id = generateRandomString();
 
   const hashedPassword = bcrypt.hashSync(password, 10);
-  console.log("hashedPassword", hashedPassword);
+
   users[id] = {
     id: id,
     email: email,
@@ -320,14 +329,15 @@ app.post("/login", (req, res) => {
     return res.status(400).send("Email and password cannot be blank")
   }
 
-  const user = findUserByEmail(email);
+  const user = findUserByEmail(email, users);
 
   // check to see if that user exists in our database
   if (!user) {
-    return res.status(400).send("A user with that email doesn't exist")
+    return res.status(400).send("A user with that email doesn't exist. You need to register first.")
   }
 
-  const passwordMatch = bcrypt.compareSync(user.password, hashedPassword);//change this when hashing passwords
+  //changed this when hashing passwords
+  const passwordMatch = bcrypt.compareSync(password, user.password);
   //check if password match
   if (!passwordMatch) {
     return res.status(400).send('Your password doesnt match');
@@ -342,8 +352,7 @@ app.post("/login", (req, res) => {
 
 //LOGOUT
 app.post("/logout", (req, res) => {
-  // res.clearCookie("user_id");
-  delete req.session.user_id;
+  req.session = null;
   res.redirect("/login");
 });
 
@@ -353,3 +362,4 @@ app.post("/logout", (req, res) => {
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
+
