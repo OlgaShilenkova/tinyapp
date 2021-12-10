@@ -5,14 +5,14 @@ const generateRandomString = () => {
     let num = Math.floor(Math.random() * 9);
     nums.push(num);
   }
-  const alphabet = "abcdefghijklmnopqrstuvwxyz"
+  const alphabet = "abcdefghijklmnopqrstuvwxyz";
   for (let i = 0; i < 3; i++) {
     let randomNum = Math.floor(Math.random() * alphabet.length);
     let character = alphabet[randomNum];
     nums.push(character);
   }
   return nums.join("");
-}
+};
 
 const findUserByEmail = (email, database) => {
   for (const singleUser in database) {
@@ -22,7 +22,7 @@ const findUserByEmail = (email, database) => {
     }
   }
   return null;
-}
+};
 
 const getUrlsForUser = (userID, database) => {
   let urlsForUser = {};
@@ -31,7 +31,7 @@ const getUrlsForUser = (userID, database) => {
       urlsForUser[shortURL] = database[shortURL];
     }
   }
-return urlsForUser;
-}
+  return urlsForUser;
+};
 
 module.exports = { generateRandomString, findUserByEmail, getUrlsForUser };

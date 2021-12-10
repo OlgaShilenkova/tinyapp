@@ -6,7 +6,7 @@ const app = express();
 const PORT = 8080; // default port 8080
 const morgan = require("morgan");
 const bcrypt = require('bcryptjs');
-const cookieSession = require('cookie-session')
+const cookieSession = require('cookie-session');
 const { generateRandomString, findUserByEmail, getUrlsForUser } = require("./helpers.js");
 
 const urlDatabase = {
@@ -31,7 +31,7 @@ const users = {
     email: "user2@example.com",
     password: "dishwasher-funk"
   }
-}
+};
 
 //
 // MIDDLEWARE SETTINGS FOR SERVER
@@ -43,7 +43,7 @@ app.use(cookieSession({
   name: 'session',
   keys: ["like houmus", "miss shuarma"],
   maxAge: 10 * 60 * 1000 // for 10 min
-}))
+}));
 
 //
 //ROUTES
@@ -55,12 +55,12 @@ app.get("/", (req, res) => {
   const { user_id } = req.session;
   if (!user_id) {
     return res.redirect("login");
-  };
+  }
   //validating existing user
   const user = users[user_id];
   if (!user) {
     return res.redirect("login");
-  };
+  }
   res.redirect("/urls");
 });
 
@@ -69,12 +69,12 @@ app.get("/users.json", (req, res) => {
   const { user_id } = req.session;
   if (!user_id) {
     return res.redirect("login");
-  };
+  }
   //validating existing user
   const user = users[user_id];
   if (!user) {
     return res.redirect("login");
-  };
+  }
   res.json(users);
 });
 
@@ -83,12 +83,12 @@ app.get("/urls.json", (req, res) => {
   const { user_id } = req.session;
   if (!user_id) {
     return res.redirect("login");
-  };
+  }
   //validating existing user
   const user = users[user_id];
   if (!user) {
     return res.redirect("login");
-  };
+  }
   res.json(urlDatabase);
 });
 
@@ -98,12 +98,12 @@ app.get("/urls", (req, res) => {
   const { user_id } = req.session;
   if (!user_id) {
     return res.redirect("login");
-  };
+  }
 
   const user = users[user_id];
   if (!user) {
     return res.redirect("login");
-  };
+  }
 
   const urlsForUser = getUrlsForUser(user.id, urlDatabase);
   const templateVars = {
@@ -221,7 +221,7 @@ app.post("/urls/:shortURL", (req, res) => {
 
   const urlBelongsToUser = urlObject.userID === user.id; // true of false
   if (!urlBelongsToUser) {
-    return res.status(400).send(" You do not own this url. ")
+    return res.status(400).send(" You do not own this url. ");
   }
   urlDatabase[shortURL] = {
     id: shortURL,
@@ -254,10 +254,10 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 
   const urlBelongsToUser = urlObject.userID === user.id; // true of false
   if (!urlBelongsToUser) {
-    return res.status(400).send(" You do not own this url. ")
+    return res.status(400).send(" You do not own this url. ");
   }
   delete urlDatabase[shortURL];
-  res.redirect("/urls")
+  res.redirect("/urls");
 
 });
 
@@ -284,7 +284,7 @@ app.post("/register", (req, res) => {
 
   const { email, password } = req.body;
   if (!email || !password) {
-    return res.status(400).send("email and password cannot be blank")
+    return res.status(400).send("email and password cannot be blank");
   }
 
   const emailExist = findUserByEmail(email, users);
@@ -329,14 +329,14 @@ app.post("/login", (req, res) => {
 
   const { email, password } = req.body;
   if (!email || !password) {
-    return res.status(400).send("Email and password cannot be blank")
+    return res.status(400).send("Email and password cannot be blank");
   }
 
   const user = findUserByEmail(email, users);
 
   // check to see if that user exists in our database
   if (!user) {
-    return res.status(400).send("A user with that email doesn't exist. You need to register first.")
+    return res.status(400).send("A user with that email doesn't exist. You need to register first.");
   }
 
   //changed this when hashing passwords
