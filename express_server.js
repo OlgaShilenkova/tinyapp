@@ -79,12 +79,10 @@ app.get("/users.json", (req, res) => {
 });
 
 app.get("/urls.json", (req, res) => {
-  // validating cookie
   const { user_id } = req.session;
   if (!user_id) {
     return res.redirect("login");
   }
-  //validating existing user
   const user = users[user_id];
   if (!user) {
     return res.redirect("login");
@@ -94,15 +92,17 @@ app.get("/urls.json", (req, res) => {
 
 //VIEWS ROUTES
 //(show all the url links) --> urls_index.ejs
+// validating cookie
 app.get("/urls", (req, res) => {
   const { user_id } = req.session;
   if (!user_id) {
-    return res.redirect("login");
+    return res.status(400).send(" You need to register first. ");
   }
 
   const user = users[user_id];
+  //validating existing user
   if (!user) {
-    return res.redirect("login");
+    return res.status(400).send(" You need to register first. ");
   }
 
   const urlsForUser = getUrlsForUser(user.id, urlDatabase);
@@ -135,12 +135,12 @@ app.get("/urls/:shortURL", (req, res) => {
 
   const { user_id } = req.session;
   if (!user_id) {
-    return res.redirect("/login");
+    return res.status(400).send(" You need to logg in first. ");
   }
 
   const user = users[user_id];
   if (!user) {
-    return res.redirect("/login");
+    return res.status(400).send(" You need to logg in first. ");
   }
 
   const { shortURL } = req.params;
@@ -148,7 +148,11 @@ app.get("/urls/:shortURL", (req, res) => {
   if (!urlObject) {
     return res.status(400).send(" This shortURL is not exist in data base ");
   }
-
+  //check if URL belongs to user
+  const urlBelongsToUser = urlObject.userID === user.id; // true of false
+  if (!urlBelongsToUser) {
+    return res.status(400).send(" You do not own this url. ");
+  }
   const templateVars = {
     user,
     urlObject
@@ -301,7 +305,6 @@ app.post("/register", (req, res) => {
     email: email,
     password: hashedPassword
   };
-  // res.cookie('user_id', users[id].id); don't need because have cookie-session instead
   req.session.user_id = users[id].id;
   res.redirect("/urls");
 });
@@ -347,7 +350,6 @@ app.post("/login", (req, res) => {
   }
 
   // happy path
-  // res.cookie('user_id', user.id); don't need because have cookie-session instead
   req.session.user_id = user.id;
   res.redirect("/urls");
 });
